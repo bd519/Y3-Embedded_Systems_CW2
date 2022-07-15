@@ -1,0 +1,42 @@
+version: "3"
+
+services:
+  influxdb:
+    image: influxdb:latest
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./data:/var/lib/influxdb2
+      - ./config:/etc/influxdb2
+    environment:
+      - INFLUXDB_DB=db0
+      - INFLUXDB_ADMIN_USER=${INFLUXDB_USERNAME}
+      - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=jbmn
+      - DOCKER_INFLUXDB_INIT_BUCKET=iot
+  restapi:
+    image: neeld/rest-api:latest
+    ports:
+      - "8087:8087"
+    environment:
+      - INFLUXDB_API_KEY=${INFLUXDB_API_KEY}
+      - INFLUXDB_HOSTNAME=influxdb
+      - BROKER_HOSTNAME=broker
+      - HTTP_PORT=8087
+      - LOOKUP_TABLE=true
+      - TEMP_WINDOW=15 # Window size in mins
+      - TEMP_THRESHOLD=30 # Temperature threshold
+  broker:
+    image: eclipse-mosquitto
+    ports:
+      - "1883:1883"
+      - "8883:8883"
+      - "8880:8880"
+    volumes:
+      - ./mosquitto-data:/mosquitto/data
+      - ./mosquitto-logs:/mosquitto/logs
+      - ./mosquitto-conf:/mosquitto/config
+    restart: unless-stopped
